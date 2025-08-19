@@ -23,3 +23,11 @@ While developing the module, by using `yarn dev` the compiler will be run in wat
 **v0.1.0**
 
 Initial implementation. Howdy!
+
+**v0.3.0**
+
+Pre-Release module available in the companion public repo.
+
+**v1.0.0**
+
+Publishing non-RC version for listing in public repo.
