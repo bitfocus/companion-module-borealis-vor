@@ -27,7 +27,7 @@
 		"ts-osc": "^0.3.2"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.3.0",
+		"@companion-module/tools": "^2.6.1",
 		"@types/node": "^22.14.1",
 		"eslint": "^9.24.0",
 		"husky": "^9.1.7",
