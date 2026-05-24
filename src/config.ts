@@ -1,8 +1,9 @@
 import { Regex, type SomeCompanionConfigField, InstanceStatus, DropdownChoice } from '@companion-module/base'
-import { ModuleInstance } from './main.js'
+import type { ModuleInstance } from './main.js'
 import { getLocalInterfaceIPs } from './discopixel/sACNReceiver/sacnReceiver.js'
 
 export interface ModuleConfig {
+	bonjour_host: string | undefined
 	host: string
 	port: number
 	osc_id: number
@@ -17,12 +18,19 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 
 	return [
 		{
+			type: 'bonjour-device',
+			id: 'bonjour_host',
+			label: 'Vor Instance',
+			width: 6,
+		},
+		{
 			type: 'textinput',
 			id: 'host',
 			label: 'Vor Host (IP or Hostname)',
 			width: 8,
 			default: '127.0.0.1',
 			regex: Regex.HOSTNAME,
+			isVisible: (options) => !options.bonjour_host,
 		},
 		{
 			type: 'number',
@@ -32,14 +40,7 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			default: 3049,
 			min: 101,
 			max: 65535,
-			// regex: Regex.PORT,
-		},
-		// @ts-expect-error - Static Text not defined in the type for some reason, but it is valid for alignment.
-		{
-			type: 'static-text',
-			id: 'null1',
-			label: '',
-			width: 8,
+			isVisible: (options) => !options.bonjour_host,
 		},
 		{
 			type: 'number',
@@ -75,27 +76,48 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			isVisible: (options) => !!options.use_rec_sACN,
 			width: 6,
 			choices: localIPChoices,
-			default: 'Pick an interface IP...',
+			default: localIPChoices.length > 0 ? localIPChoices[0].id : '',
+			allowCustom: true,
 		},
 	]
 }
 
+/**
+ * Parse the effective host and port from the module config.
+ * If a Bonjour device is selected, its value is "host:port" and takes priority.
+ * Otherwise, the manual host and port fields are used.
+ */
+export function getTargetHostPort(config: ModuleConfig): { host: string; port: number } {
+	if (config.bonjour_host) {
+		const parts = config.bonjour_host.split(':')
+		return {
+			host: parts[0],
+			port: parts.length > 1 ? Number(parts[1]) : config.port,
+		}
+	}
+	return { host: config.host, port: config.port }
+}
+
 export function validateConfig(instance: ModuleInstance): boolean {
 	const config = instance.config
+	const { host, port } = getTargetHostPort(config)
 
-	try {
-		if (!config.host) {
-			throw Error('IP or Hostname is mandatory!')
-		}
-		if (!config.port) {
-			throw Error('Destination Port Num is mandatory!')
-		}
-		if (config.use_rec_sACN && !config.sacn_universe) {
-			throw Error('sACN Universe must be specified when sACN recording status is enabled!')
-		}
-	} catch (e: any) {
-		instance.updateStatus(InstanceStatus.BadConfig, e.toString())
+	if (!host) {
+		instance.updateStatus(InstanceStatus.BadConfig, 'IP or Hostname is mandatory!')
 		return false
 	}
+	if (!port) {
+		instance.updateStatus(InstanceStatus.BadConfig, 'Destination Port Num is mandatory!')
+		return false
+	}
+	if (config.use_rec_sACN && !config.sacn_universe) {
+		instance.updateStatus(
+			InstanceStatus.BadConfig,
+			'sACN Universe must be specified when sACN recording status is enabled!',
+		)
+		return false
+	}
+
+	instance.updateStatus(InstanceStatus.Ok)
 	return true
 }
