@@ -16,8 +16,14 @@
 	"runtime": {
 		"type": "node22",
 		"api": "nodejs-ipc",
-		"apiVersion": "0.0.0",
+		"apiVersion": "1.1.0",
 		"entrypoint": "../dist/main.js"
+	},
+	"bonjourQueries": {
+		"bonjour_host": {
+			"type": "vor-osc",
+			"protocol": "udp"
+		}
 	},
 	"legacyIds": [],
 	"manufacturer": "Borealis Solutions",
