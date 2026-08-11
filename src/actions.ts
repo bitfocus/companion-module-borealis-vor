@@ -1,5 +1,6 @@
 import type { ModuleInstance } from './main.js'
 import { MessageType, OSCString } from './constants.js'
+import { getTargetHostPort } from './config.js'
 import { OSCClient, OSCType } from 'ts-osc'
 import { InputValue, Regex } from '@companion-module/base'
 
@@ -130,12 +131,13 @@ export function UpdateActions(self: ModuleInstance): void {
 
 function sendSimpleMessage(msgType: MessageType, instance: ModuleInstance) {
 	const address = constructAddress(msgType, instance.config.osc_id)
+	const { host, port } = getTargetHostPort(instance.config)
 
-	const client = new OSCClient(instance.config.host, instance.config.port)
+	const client = new OSCClient(host, port)
 
 	client.send(address, OSCType.Null, null)
 
-	instance.log('debug', `Sent ${address} to ${instance.config.host}`)
+	instance.log('debug', `Sent ${address} to ${host}:${port}`)
 }
 
 function sendAttributeMessage(
@@ -144,8 +146,9 @@ function sendAttributeMessage(
 	value: string | number | InputValue | undefined,
 ) {
 	const address = constructAddress(msgType, instance.config.osc_id)
+	const { host, port } = getTargetHostPort(instance.config)
 
-	const client = new OSCClient(instance.config.host, instance.config.port)
+	const client = new OSCClient(host, port)
 
 	if (typeof value === 'string') {
 		client.send(address, OSCType.String, value)
@@ -153,7 +156,7 @@ function sendAttributeMessage(
 		client.send(address, OSCType.Integer, value)
 	}
 
-	instance.log('debug', `Sent ${address} to ${instance.config.host} with attribute: ${value} (as a ${typeof value})`)
+	instance.log('debug', `Sent ${address} to ${host}:${port} with attribute: ${value} (as a ${typeof value})`)
 }
 
 function constructAddress(msgType: MessageType, osc_id: number) {
